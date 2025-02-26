@@ -126,6 +126,7 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
                     Ok(_) => {
                         state.pipe_reader = Some(reader);
                         data_device.set_selection(state.data_source.as_ref());
+                        data_device.set_primary_selection(state.data_source.as_ref());
                     },
                     Err(_) => {}
                 }
