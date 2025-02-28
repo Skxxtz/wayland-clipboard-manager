@@ -2,7 +2,7 @@
 A clipboard manager that keeps copied text alive even after the source application is closed.  
 
 ## TL;DR  
-While developing my application *Sherlock*, I wanted to implement a feature allowing users to calculate simple mathematical equations and store the results in the system clipboard. However, after closing the application, the result was no longer pasteable.  
+While developing my application [*Sherlock*](https://github.com/Skxxtz/sherlock), I wanted to implement a feature allowing users to calculate simple mathematical equations and store the results in the system clipboard. However, after closing the application, the result was no longer pasteable.  
 
 After some research, I discovered that this was *intended behavior* and that I should "use a clipboard manager."  
 
