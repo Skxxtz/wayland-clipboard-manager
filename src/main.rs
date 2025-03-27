@@ -18,7 +18,7 @@ struct AppState {
     data_source: Option<ZwlrDataControlSourceV1>,
     pipe_reader: Option<OwnedFd>,
     clipped: Vec<u8>,
-    mime_types: HashSet<String>,
+    mime_type: Option<String>,
     changed: bool,
 }
 
@@ -31,7 +31,7 @@ impl AppState {
             data_source: None,
             pipe_reader: None,
             clipped: vec![],
-            mime_types: HashSet::new(),
+            mime_type: None,
             changed: false,
         }
     }
@@ -46,40 +46,12 @@ impl AppState {
             (&self.data_device, &self.data_device_manager)
         {
             let data_source = data_device_manager.create_data_source(qh, ());
-            println!("new offering");
-            for mime in &self.mime_types {
+            if let Some(mime) = &self.mime_type {
                 data_source.offer(mime.to_string());
             }
             data_device.set_selection(Some(&data_source));
             self.data_source = Some(data_source);
         }
-    }
-    fn get_best_mimetype(&self) -> Option<String> {
-        let preferred_order = [
-            "text/html",
-            "text/rtf",
-            "application/vnd.oasis.opendocument.text",
-            "application/msword",
-            "application/pdf",
-            "text/plain;charset=utf-8",
-            "text/plain",
-            "UTF8_STRING",
-            "STRING",
-            "TEXT",
-            "COMPOUND_TEXT",
-            "image/png",
-            "image/jpeg",
-            "image/svg+xml",
-            "application/zip",
-            "application/x-tar",
-        ];
-
-        for &mime in &preferred_order {
-            if self.mime_types.contains(mime) {
-                return Some(mime.to_string());
-            }
-        }
-        None
     }
 }
 

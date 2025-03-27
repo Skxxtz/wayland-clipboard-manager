@@ -1,6 +1,6 @@
 use crate::AppState;
-use nix::{sys::stat, unistd::pipe};
-use std::{fs::File, io::Write, os::fd::AsFd};
+use nix::unistd::pipe;
+use std::{collections::HashSet, fs::File, io::Write, os::fd::AsFd};
 use wayland_client::{
     event_created_child,
     protocol::{
@@ -83,7 +83,8 @@ impl Dispatch<ZwlrDataControlOfferV1, ()> for AppState {
     ) {
         match event {
             zwlr_data_control_offer_v1::Event::Offer { mime_type } => {
-                state.mime_types.insert(mime_type);
+                println!("{:?}", mime_type);
+                state.mime_type = parse_mime(mime_type);
             }
             _ => {}
         }
@@ -101,12 +102,18 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
         match event {
             zwlr_data_control_source_v1::Event::Send { mime_type, fd } => {
                 let clipboard_content = state.clipped.as_ref();
-                println!("{}", mime_type);
-                let mut file = File::from(fd);
-                match file.write_all(&clipboard_content) {
-                    Ok(_) => {}
-                    Err(_) => {}
+                println!("{:?} - {}", state.mime_type, mime_type);
+                if let Some(mime) =  &state.mime_type {
+                    if mime == mime_type.as_str() {
+                        let mut file = File::from(fd);
+                        match file.write_all(&clipboard_content) {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        };
+                    }
                 };
+                
+                
             }
             _ => {}
         }
@@ -131,8 +138,8 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
                     return;
                 };
 
-                if let Some(mime_type) = state.get_best_mimetype() {
-                    selection.receive(mime_type, writer.as_fd());
+                if let Some(mime_type) = &state.mime_type {
+                    selection.receive(mime_type.to_string(), writer.as_fd());
                     match conn.roundtrip() {
                         Ok(_) => {
                             state.pipe_reader = Some(reader);
@@ -149,4 +156,22 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
         }
     }
     event_created_child!(AppState, ZwlrDataControlDeviceV1, [zwlr_data_control_device_v1::EVT_DATA_OFFER_OPCODE => (ZwlrDataControlOfferV1, ())]);
+}
+
+fn parse_mime(mime:String)->Option<String> {
+    let text_mimes = vec![
+        "text/plain",
+        "text/plain;charset=utf-8",
+        "TEXT",
+        "STRING",
+        "UTF8_STRING"
+    ];
+    if text_mimes.contains(&mime.as_str()){
+        return Some("text/plain;charset=utf-8".to_string())
+    } else {
+        if mime.contains("image"){
+            return Some("image/png".to_string())
+        }
+        return Some(mime)
+    }
 }
