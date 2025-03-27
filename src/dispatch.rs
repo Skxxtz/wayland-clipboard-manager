@@ -103,7 +103,7 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
             zwlr_data_control_source_v1::Event::Send { mime_type, fd } => {
                 let clipboard_content = state.clipped.as_ref();
                 println!("{:?} - {}", state.mime_type, mime_type);
-                if let Some(mime) =  &state.mime_type {
+                if let Some(mime) = &state.mime_type {
                     if mime == mime_type.as_str() {
                         let mut file = File::from(fd);
                         match file.write_all(&clipboard_content) {
@@ -112,8 +112,6 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
                         };
                     }
                 };
-                
-                
             }
             _ => {}
         }
@@ -158,20 +156,20 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
     event_created_child!(AppState, ZwlrDataControlDeviceV1, [zwlr_data_control_device_v1::EVT_DATA_OFFER_OPCODE => (ZwlrDataControlOfferV1, ())]);
 }
 
-fn parse_mime(mime:String)->Option<String> {
+fn parse_mime(mime: String) -> Option<String> {
     let text_mimes = vec![
         "text/plain",
         "text/plain;charset=utf-8",
         "TEXT",
         "STRING",
-        "UTF8_STRING"
+        "UTF8_STRING",
     ];
-    if text_mimes.contains(&mime.as_str()){
-        return Some("text/plain;charset=utf-8".to_string())
+    if text_mimes.contains(&mime.as_str()) {
+        return Some("text/plain;charset=utf-8".to_string());
     } else {
-        if mime.contains("image"){
-            return Some("image/png".to_string())
+        if mime.contains("image") {
+            return Some("image/png".to_string());
         }
-        return Some(mime)
+        return Some(mime);
     }
 }
