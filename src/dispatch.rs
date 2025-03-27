@@ -1,17 +1,13 @@
-use std:: {
-    fs::File,
-    io::Write,
-    os::fd::AsFd,
-};
+use crate::AppState;
 use nix::{sys::stat, unistd::pipe};
+use std::{fs::File, io::Write, os::fd::AsFd};
 use wayland_client::{
     event_created_child,
     protocol::{
         wl_registry::{self, WlRegistry},
-        wl_seat::{self, WlSeat}
+        wl_seat::{self, WlSeat},
     },
-    Connection, QueueHandle,
-    Dispatch, Proxy,
+    Connection, Dispatch, Proxy, QueueHandle,
 };
 use wayland_protocols_wlr::data_control::v1::client::{
     zwlr_data_control_device_v1::{self, ZwlrDataControlDeviceV1},
@@ -19,8 +15,6 @@ use wayland_protocols_wlr::data_control::v1::client::{
     zwlr_data_control_offer_v1::{self, ZwlrDataControlOfferV1},
     zwlr_data_control_source_v1::{self, ZwlrDataControlSourceV1},
 };
-use crate::AppState;
-
 
 impl Dispatch<WlRegistry, ()> for AppState {
     fn event(
@@ -40,8 +34,13 @@ impl Dispatch<WlRegistry, ()> for AppState {
                 if interface == WlSeat::interface().name {
                     state.seat = Some(registry.bind::<WlSeat, _, AppState>(name, version, qh, ()));
                 } else if interface == ZwlrDataControlManagerV1::interface().name {
-                    state.data_device_manager = Some(registry
-                        .bind::<ZwlrDataControlManagerV1, _, AppState>(name, version, qh, ()));
+                    state.data_device_manager =
+                        Some(registry.bind::<ZwlrDataControlManagerV1, _, AppState>(
+                            name,
+                            version,
+                            qh,
+                            (),
+                        ));
                 }
             }
             _ => {}
@@ -57,7 +56,8 @@ impl Dispatch<WlSeat, ()> for AppState {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<AppState>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<ZwlrDataControlManagerV1, ()> for AppState {
@@ -68,7 +68,8 @@ impl Dispatch<ZwlrDataControlManagerV1, ()> for AppState {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<AppState>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<ZwlrDataControlOfferV1, ()> for AppState {
@@ -83,7 +84,7 @@ impl Dispatch<ZwlrDataControlOfferV1, ()> for AppState {
         match event {
             zwlr_data_control_offer_v1::Event::Offer { mime_type } => {
                 state.mime_types.insert(mime_type);
-            },
+            }
             _ => {}
         }
     }
@@ -102,9 +103,9 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
                 let clipboard_content = state.clipped.as_ref();
                 println!("{}", mime_type);
                 let mut file = File::from(fd);
-                match file.write_all(&clipboard_content){
-                    Ok(_) => {},
-                    Err(_) => {},
+                match file.write_all(&clipboard_content) {
+                    Ok(_) => {}
+                    Err(_) => {}
                 };
             }
             _ => {}
@@ -123,17 +124,21 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
         match event {
             zwlr_data_control_device_v1::Event::Selection { id } => {
                 let Some(selection) = id else { return };
-                let Some(data_device) = state.data_device.as_ref() else { return; };
-                let Ok((reader, writer)) = pipe() else { return; };
+                let Some(data_device) = state.data_device.as_ref() else {
+                    return;
+                };
+                let Ok((reader, writer)) = pipe() else {
+                    return;
+                };
 
                 if let Some(mime_type) = state.get_best_mimetype() {
                     selection.receive(mime_type, writer.as_fd());
-                    match conn.roundtrip(){
+                    match conn.roundtrip() {
                         Ok(_) => {
                             state.pipe_reader = Some(reader);
                             data_device.set_selection(state.data_source.as_ref());
                             data_device.set_primary_selection(state.data_source.as_ref());
-                        },
+                        }
                         Err(_) => {}
                     }
                 }
@@ -142,7 +147,6 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
             zwlr_data_control_device_v1::Event::Finished => {}
             _ => {}
         }
-
     }
     event_created_child!(AppState, ZwlrDataControlDeviceV1, [zwlr_data_control_device_v1::EVT_DATA_OFFER_OPCODE => (ZwlrDataControlOfferV1, ())]);
 }
