@@ -3,7 +3,7 @@ use std:: {
     io::Write,
     os::fd::AsFd,
 };
-use nix::unistd::pipe;
+use nix::{sys::stat, unistd::pipe};
 use wayland_client::{
     event_created_child,
     protocol::{
@@ -16,7 +16,7 @@ use wayland_client::{
 use wayland_protocols_wlr::data_control::v1::client::{
     zwlr_data_control_device_v1::{self, ZwlrDataControlDeviceV1},
     zwlr_data_control_manager_v1::ZwlrDataControlManagerV1,
-    zwlr_data_control_offer_v1::ZwlrDataControlOfferV1,
+    zwlr_data_control_offer_v1::{self, ZwlrDataControlOfferV1},
     zwlr_data_control_source_v1::{self, ZwlrDataControlSourceV1},
 };
 use crate::AppState;
@@ -73,13 +73,20 @@ impl Dispatch<ZwlrDataControlManagerV1, ()> for AppState {
 
 impl Dispatch<ZwlrDataControlOfferV1, ()> for AppState {
     fn event(
-        _state: &mut Self,
+        state: &mut Self,
         _proxy: &ZwlrDataControlOfferV1,
-        _event: <ZwlrDataControlOfferV1 as Proxy>::Event,
+        event: <ZwlrDataControlOfferV1 as Proxy>::Event,
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<AppState>,
-    ) {}
+    ) {
+        match event {
+            zwlr_data_control_offer_v1::Event::Offer { mime_type } => {
+                state.mime_types.insert(mime_type);
+            },
+            _ => {}
+        }
+    }
 }
 impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
     fn event(
@@ -92,14 +99,13 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
     ) {
         match event {
             zwlr_data_control_source_v1::Event::Send { mime_type, fd } => {
-                let Some(clipboard_content) = state.clipped.as_ref() else { return };
-                if mime_type == "text/plain;charset=utf-8"{
-                    let mut file = File::from(fd);
-                    match file.write_all(&clipboard_content){
-                        Ok(_) => {},
-                        Err(_) => {},
-                    };
-                }
+                let clipboard_content = state.clipped.as_ref();
+                println!("{}", mime_type);
+                let mut file = File::from(fd);
+                match file.write_all(&clipboard_content){
+                    Ok(_) => {},
+                    Err(_) => {},
+                };
             }
             _ => {}
         }
@@ -120,15 +126,16 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
                 let Some(data_device) = state.data_device.as_ref() else { return; };
                 let Ok((reader, writer)) = pipe() else { return; };
 
-                let mime_type = String::from("text/plain;charset=utf-8");
-                selection.receive(mime_type, writer.as_fd());
-                match conn.roundtrip(){
-                    Ok(_) => {
-                        state.pipe_reader = Some(reader);
-                        data_device.set_selection(state.data_source.as_ref());
-                        data_device.set_primary_selection(state.data_source.as_ref());
-                    },
-                    Err(_) => {}
+                if let Some(mime_type) = state.get_best_mimetype() {
+                    selection.receive(mime_type, writer.as_fd());
+                    match conn.roundtrip(){
+                        Ok(_) => {
+                            state.pipe_reader = Some(reader);
+                            data_device.set_selection(state.data_source.as_ref());
+                            data_device.set_primary_selection(state.data_source.as_ref());
+                        },
+                        Err(_) => {}
+                    }
                 }
             }
             zwlr_data_control_device_v1::Event::DataOffer { .. } => {}
