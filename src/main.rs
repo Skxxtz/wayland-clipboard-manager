@@ -104,3 +104,16 @@ fn main() {
         }
     }
 }
+
+#[test]
+fn test_app_state_initialization() {
+    let state = AppState::new();
+    assert!(state.seat.is_none());
+    assert!(state.data_device_manager.is_none());
+    assert!(state.data_device.is_none());
+    assert!(state.data_source.is_none());
+    assert!(state.pipe_reader.is_none());
+    assert!(state.mime_type.is_none());
+    assert_eq!(state.clipped, Vec::new());
+    assert!(!state.changed);
+}
