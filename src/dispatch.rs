@@ -173,3 +173,24 @@ fn parse_mime(mime: String) -> Option<String> {
         return Some(mime);
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use super::parse_mime;
+
+    #[test]
+    fn test_parse_mime() {
+        // Text MIME types should return "text/plain;charset=utf-8"
+        assert_eq!(parse_mime("text/plain".to_string()), Some("text/plain;charset=utf-8".to_string()));
+        assert_eq!(parse_mime("TEXT".to_string()), Some("text/plain;charset=utf-8".to_string()));
+        assert_eq!(parse_mime("UTF8_STRING".to_string()), Some("text/plain;charset=utf-8".to_string()));
+        assert_eq!(parse_mime("text/markdown".to_string()), Some("text/plain;charset=utf-8".to_string()));
+
+        // HTML should return as-is
+        assert_eq!(parse_mime("text/html".to_string()), Some("text/html".to_string()));
+
+        // Other MIME types should return as-is
+        assert_eq!(parse_mime("image/png".to_string()), Some("image/png".to_string()));
+        assert_eq!(parse_mime("application/json".to_string()), Some("application/json".to_string()));
+    }
+}
