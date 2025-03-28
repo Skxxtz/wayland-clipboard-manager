@@ -163,13 +163,13 @@ fn parse_mime(mime: String) -> Option<String> {
         "TEXT",
         "STRING",
         "UTF8_STRING",
-        "COMPOUND_TEXT"
+        "COMPOUND_TEXT",
     ];
     if mime.as_str() == "text/html" {
-        return Some(mime)
-    } else if mime.contains("text/") || text_mimes.contains(&mime.as_str()){
+        return Some(mime);
+    } else if mime.contains("text/") || text_mimes.contains(&mime.as_str()) {
         return Some("text/plain;charset=utf-8".to_string());
     } else {
-        return Some(mime)
+        return Some(mime);
     };
 }
