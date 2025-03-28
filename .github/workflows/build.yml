@@ -3,9 +3,12 @@ on:
   push:
     branches: [ "main" ]
     paths-ignore:
+      - ".github/workflows**"
       - "**.md"
       - "**.markdown"
       - "**.rasi"
+      - "**.sh"
+      - "**LICENSE"
   pull_request:
     branches: [ "**" ]
     paths-ignore:
