@@ -1,11 +1,11 @@
 use crate::AppState;
 use nix::unistd::pipe;
-use std::{collections::HashSet, fs::File, io::Write, os::fd::AsFd};
+use std::{fs::File, io::Write, os::fd::AsFd};
 use wayland_client::{
     event_created_child,
     protocol::{
         wl_registry::{self, WlRegistry},
-        wl_seat::{self, WlSeat},
+        wl_seat::WlSeat,
     },
     Connection, Dispatch, Proxy, QueueHandle,
 };
@@ -163,13 +163,13 @@ fn parse_mime(mime: String) -> Option<String> {
         "TEXT",
         "STRING",
         "UTF8_STRING",
+        "COMPOUND_TEXT"
     ];
-    if text_mimes.contains(&mime.as_str()) {
+    if mime.as_str() == "text/html" {
+        return Some(mime)
+    } else if mime.contains("text/") || text_mimes.contains(&mime.as_str()){
         return Some("text/plain;charset=utf-8".to_string());
     } else {
-        if mime.contains("image") {
-            return Some("image/png".to_string());
-        }
-        return Some(mime);
-    }
+        return Some(mime)
+    };
 }

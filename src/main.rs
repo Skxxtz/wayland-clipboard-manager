@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Read;
-use std::{collections::HashSet, os::fd::OwnedFd};
+use std::os::fd::OwnedFd;
 
 use wayland_client::{protocol::wl_seat, Connection, QueueHandle};
 use wayland_protocols_wlr::data_control::v1::client::{
