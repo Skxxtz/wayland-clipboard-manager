@@ -13,4 +13,3 @@ fn test_app_start() {
 
     let _ = child.kill();
 }
-
