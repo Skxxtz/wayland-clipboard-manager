@@ -88,7 +88,9 @@ fn main() {
                     let mut file = File::from(fd);
                     let mut buf = vec![];
                     if let Ok(_bytes) = file.read_to_end(&mut buf) {
+                        println!("{:?}", buf);
                         if buf != app_state.clipped {
+                            println!("{:?}", app_state.clipped);
                             app_state.changed = true
                         }
                         app_state.clipped = buf;

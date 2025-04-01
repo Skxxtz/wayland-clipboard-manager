@@ -83,7 +83,6 @@ impl Dispatch<ZwlrDataControlOfferV1, ()> for AppState {
     ) {
         match event {
             zwlr_data_control_offer_v1::Event::Offer { mime_type } => {
-                println!("{:?}", mime_type);
                 state.mime_type = parse_mime(mime_type);
             }
             _ => {}
@@ -102,7 +101,7 @@ impl Dispatch<ZwlrDataControlSourceV1, ()> for AppState {
         match event {
             zwlr_data_control_source_v1::Event::Send { mime_type, fd } => {
                 let clipboard_content = state.clipped.as_ref();
-                println!("{:?} - {}", state.mime_type, mime_type);
+                println!("Paste as: {}", mime_type);
                 if let Some(mime) = &state.mime_type {
                     if mime == mime_type.as_str() {
                         let mut file = File::from(fd);
@@ -137,6 +136,7 @@ impl Dispatch<ZwlrDataControlDeviceV1, ()> for AppState {
                 };
 
                 if let Some(mime_type) = &state.mime_type {
+                    println!("{}", mime_type);
                     selection.receive(mime_type.to_string(), writer.as_fd());
                     match conn.roundtrip() {
                         Ok(_) => {
